@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+     <h1>Register User</h1>
+    <form action="/register" method="POST">
+        <label>User Name</label><br />
+        <input type="text" name="userName"><br />
+
+        <label>Email</label><br />
+        <input type="email" name="userEmail"><br />
+
+        <label>Password</label><br />
+        <input type="password" name="userPassword"><br />
+
+        <label>Confirm Password</label><br />
+        <input type="password" name="userPasswordConfirm"><br />
+
+        <button type="submit">Register</button>
+    </form>
+    
+    <p>{{this.error}}</p>
+</body>
+</html>
