@@ -15,7 +15,15 @@
     <a href="/delete" ><button>Delete Account</button></a><br />
     <a href="/newPost" ><button>Create Blog Post</button></a><br />
     <a href="/userBlogPosts" ><button>See Blog Posts</button></a><br />
+    <a href="/logout" ><button>Logout</button></a><br />
 
 
+
+    
+        {{#each users}}
+        <li>Name: {{this.name}}</li>
+
+        {{/each}}
+    
 </body>
 </html>

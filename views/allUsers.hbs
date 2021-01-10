@@ -6,10 +6,12 @@
     <title>Document</title>
 </head>
 <body>
+     <h1>All Users</h1>
 
-    <h1>Home Page</h1>
-    <a href="/register" ><button>Register</button></a><br />
-    <a href="/login" ><button>Login</button></a><br />
-   
+    {{#each users}}
+        <li>Name: {{this.name}}</li>
+
+    {{/each}}
+    
 </body>
 </html>

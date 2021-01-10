@@ -1,7 +1,7 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
-const path = require('path');
+const path = require("path");
 const User = require("./models/user");
 const Blogpost = require("./models/blogpostModel");
 const bcrypt = require("bcryptjs");
@@ -28,18 +28,18 @@ app.use(express.static(publicDirectory));
 
 app.use(express.urlencoded({extended: false}));
 app.use(express.json({extended: false}));
-app.use(cookieParser());
+app.use( cookieParser() );
 
 
 app.get("/", (req, res) => {
-    res.render("Hello from node.js")
+    res.render("index")
 });
 
-app.get('/register', (req, res) => {
-    res.render('register');
+app.get("/register", (req, res) => {
+    res.render("register");
 });
 
-app.post('/register', async (req, res) => {
+app.post("/register", async (req, res) => {
     console.log(req.body);
     
     const email = await User.findOne({email: req.body.userEmail})
@@ -55,27 +55,30 @@ app.post('/register', async (req, res) => {
 
     } else {
     const hashedPassword = await bcrypt.hash(req.body.userPassword, 8);
-    await User.create({
+    const registered = await User.create({
         name: req.body.userName,
         email: req.body.userEmail,
         password: hashedPassword
     
     });
-    res.send("User Registered")
+    auth.logIn(registered._id, res)
+
+    res.redirect("/profile")
     };
     
 });
 
-app.get('/login', (req, res) => {
-    res.render('login');
+app.get("/login", (req, res) => {
+    res.render("login");
 });
 
-app.post("/login", async (req, res) => {
+app.post("/login", auth.isLoggedIn, async (req, res) => {
     const user = await User.findOne({email: req.body.userEmail})
 
+    const adminAccess = user.admin
     const isMatch = await bcrypt.compare(req.body.userPassword, user.password)
 
-    if( isMatch) {
+    if( isMatch && !adminAccess) {
 
         const token = jwt.sign({id: user._id}, process.env.JWT_SECRET, {
             expiresIn: process.env.JWT_EXPIRES_IN
@@ -92,33 +95,76 @@ app.post("/login", async (req, res) => {
 
         res.cookie("jwt", token, cookieOptions);
 
-        res.redirect("profile")
+        res.redirect("profile")  
+
+    } else if (isMatch && adminAccess) {  
+
+        const token = jwt.sign({id: user._id}, process.env.JWT_SECRET, {
+            expiresIn: process.env.JWT_EXPIRES_IN
+        });
+
+        console.log(token);
+
+        const cookieOptions = {
+            expires: new Date(
+                Date.now() + process.env.JWT_COOKIE_EXPIRES * 24 * 60 * 60 * 1000
+            ),
+            httpOnly: true
+        }
+
+        res.cookie("jwt", token, cookieOptions);
+
+        res.redirect("adminPage")
     } else {
         res.send("Login failed")
     }
 });
 
 app.get("/logout", auth.logout, (req, res) => {
-    res.render("logout");
+    res.render("index");
 });
 
-app.get('/profile', auth.isLoggedIn, (req, res) => {
+app.get("/profile", auth.isLoggedIn, async (req, res) => {
     try{
+        const adminAccess = req.userFound.admin ? true : false
         if(req.userFound) {
-            const userDB = req.userFound;
-
-            res.render('profile', {
+            
+            res.render("profile", {
                 name: req.userFound.name,
                 email: req.userFound.email
-            });
-        } else {
-            res.send("You are not logged in");
+            }); 
+        } else if (adminAccess) {
+            res.redirect("adminPage");
         }
     } catch(error) {
         res.send("User not found");
     };
 });
 
-app.listen(5000, () => {
-    console.log("Server is running on Port 5000");
+app.get("/delete", auth.isLoggedIn, async (req, res) => {
+    try{
+        await User.findByIdAndDelete(req.userFound._id);
+        res.send("User has been deleted");
+    } catch(error) {
+        res.send("That user does not exist");
+    };
+});
+
+app.get("/adminPage", auth.isLoggedIn, (req, res) => {
+
+    const adminAccess = req.userFound.admin ? true : false
+
+    if (req.userFound && adminAccess) {
+    res.render("adminPage")
+    } else {
+        res.redirect("profile")
+    }
+});
+
+app.get("*", (req, res) => {
+    res.send("error");
+});
+
+app.listen(9000, () => {
+    console.log("Server is running on Port 9000");
 });
